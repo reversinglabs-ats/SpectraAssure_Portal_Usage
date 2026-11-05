@@ -1,4 +1,7 @@
 __pycache__/
+config.toml
+output/
+.rl-protect/
 *.pyc
 *.pyo
 *.egg-info/
@@ -10,5 +13,3 @@ build/
 .ruff_cache/
 .pytest_cache/
 *.egg
-output/
-.rl-protect/
