@@ -1,0 +1,1117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage report – {{ data.organization }}</title>
+<style>
+/* ---------- Colour tokens (light) ----------
+   Text colours meet WCAG AA (4.5:1) on both the white panels and the grey filter bar. */
+:root {
+  --bg: #f2f3f5; --panel: #ffffff; --border: #e2e4e8; --border-strong: #c3c8cf;
+  --text: #1d2125; --text-2: #3f4651; --muted: #545b66; --subtle: #5f6670;
+  --primary: #1f5fae; --primary-hover: #194f91; --on-primary: #ffffff;
+  --bar: #9d87cf; --bar-dim: #ddd5ef;
+  --cap: #3a2f73; --flex: #1a9c80;
+  --cli: #1a9c80; --portal: #7b5cc4;
+  --grid: #eceef1; --row-hover: #f6f7f9; --row-open: #f3f1fa; --opt-active: #e8eefa;
+  --danger: #b42318; --danger-bg: #fdecea;
+  --chip: #eef0f3; --focus: #1f5fae; --mark: #fff1a8;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131417; --panel: #1b1d21; --border: #2c2f35; --border-strong: #4a4f57;
+    --text: #e7e9ec; --text-2: #c9ced5; --muted: #aab0b9; --subtle: #9aa1ab;
+    --primary: #4a8ad8; --primary-hover: #64a0e6; --on-primary: #0d1117;
+    --bar: #8f7ad0; --bar-dim: #3a3452;
+    --cap: #b9adf0; --flex: #2aa88c;
+    --cli: #2aa88c; --portal: #9478dc;
+    --grid: #26292e; --row-hover: #22252a; --row-open: #25223a; --opt-active: #233250;
+    --danger: #f97066; --danger-bg: #3a1d1b;
+    --chip: #2a2d33; --focus: #64a0e6; --mark: #5a4b12;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131417; --panel: #1b1d21; --border: #2c2f35; --border-strong: #4a4f57;
+  --text: #e7e9ec; --text-2: #c9ced5; --muted: #aab0b9; --subtle: #9aa1ab;
+  --primary: #4a8ad8; --primary-hover: #64a0e6; --on-primary: #0d1117;
+  --bar: #8f7ad0; --bar-dim: #3a3452;
+  --cap: #b9adf0; --flex: #2aa88c;
+  --cli: #2aa88c; --portal: #9478dc;
+  --grid: #26292e; --row-hover: #22252a; --row-open: #25223a; --opt-active: #233250;
+  --danger: #f97066; --danger-bg: #3a1d1b;
+  --chip: #2a2d33; --focus: #64a0e6; --mark: #5a4b12;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.num { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Header ---------- */
+.topbar {
+  display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+  padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.brand .logo { height: 48px; width: auto; display: block; }  /* stacked logo: tall enough for the wordmark */
+/* The logo is a square mark with a small wordmark below it (209 × 252). A negative bottom margin
+   (the wordmark's share of the height, 43/252) makes the header text line up with the middle of
+   the square instead of the middle of the whole image. */
+.brand .logo { margin-bottom: calc(-48px * 43 / 252); }
+.topbar.has-logo { padding-bottom: 20px; }
+/* Colour logo on light backgrounds, the "for dark backgrounds" logo in dark mode */
+.brand .logo-dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .brand .logo-light { display: none; }
+  :root:not([data-theme="light"]) .brand .logo-dark { display: block; }
+}
+:root[data-theme="dark"] .brand .logo-light { display: none; }
+:root[data-theme="dark"] .brand .logo-dark { display: block; }
+.brand h1 { font-size: 16px; font-weight: 650; margin: 0; white-space: nowrap; }
+.brand .org { font-size: 14px; font-weight: 600; padding-left: 12px; border-left: 1px solid var(--border-strong); white-space: nowrap; }  /* organization from config.toml */
+.brand .generated { color: var(--text-2); font-size: 13px; }
+.range { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; font-weight: 500; position: relative; }
+.info-btn {
+  width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--text-2); background: none;
+  font: 700 11px/1 Georgia, serif; font-style: italic; cursor: pointer; padding: 0; color: var(--text-2);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.info-btn:hover { background: var(--row-hover); }
+.info-pop p { margin: 0; }
+.info-pop p + p { margin-top: 8px; }
+.info-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; width: min(320px, 90vw);
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 12px; font-size: 13px; font-weight: 400; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+
+/* ---------- Filters ---------- */
+.filters { padding: 12px 16px 10px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.filter-row { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 170px; flex: 1 1 170px; max-width: 280px; }
+.field.dates { flex: 1 1 290px; min-width: 290px; max-width: 340px; }
+.field > label, .field > .label { font-size: 11px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.field input {
+  height: 34px; border: 1px solid var(--border-strong); border-radius: 4px;
+  background: var(--panel); padding: 0 10px; width: 100%;
+}
+.daterange { display: flex; gap: 6px; align-items: center; position: relative; }
+.daterange > span { color: var(--muted); }
+.datebox { flex: 1; min-width: 0; position: relative; }
+.datebox input { font-weight: 600; padding: 0 34px 0 10px; font-variant-numeric: tabular-nums; }
+.datebox input[aria-invalid="true"] { border-color: var(--danger); outline-color: var(--danger); }
+.cal-btn { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border: 0; background: none;
+  border-radius: 4px; cursor: pointer; color: var(--text-2); display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+.cal-btn:hover { background: var(--row-hover); }
+.calendar { position: absolute; z-index: 26; top: calc(100% + 4px); left: 0; width: 272px; padding: 10px;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+.calendar.right { left: auto; right: 0; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-weight: 650; }
+.cal-head button { width: 30px; height: 30px; border: 0; background: none; border-radius: 4px; cursor: pointer; font-size: 16px; color: var(--text); }
+.cal-head button:hover:not(:disabled) { background: var(--row-hover); }
+.cal-head button:disabled { opacity: .35; cursor: default; }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+.cal-grid .dow { font-size: 11px; font-weight: 650; color: var(--muted); padding: 4px 0; }
+.cal-grid button { height: 32px; border: 0; background: none; border-radius: 4px; cursor: pointer; font-variant-numeric: tabular-nums; color: var(--text); }
+.cal-grid button:hover:not(:disabled) { background: var(--row-hover); }
+.cal-grid button.in-range { background: var(--opt-active); }
+.cal-grid button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); font-weight: 650; }
+.cal-grid button:disabled { color: var(--border-strong); cursor: default; }
+.cal-note { margin-top: 6px; font-size: 11px; color: var(--muted); }
+/* "Clear filters" looks like a text link (still a real button, so keyboards and screen readers work) */
+.btn-clear {
+  height: 34px; border: 0; background: none; color: var(--primary);
+  padding: 0 4px; cursor: pointer; font-weight: 600; white-space: nowrap;
+}
+.btn-clear:hover { text-decoration: underline; text-underline-offset: 3px; }
+.caption { margin: 8px 0 0; color: var(--text-2); font-size: 13px; }
+
+/* Autocomplete dropdown (combobox) */
+.combo { position: relative; }
+.combo input { font-weight: 600; padding-right: 30px; text-overflow: ellipsis; }
+.combo input:disabled { background: var(--chip); color: var(--muted); cursor: not-allowed; }
+.combo input::placeholder { color: var(--muted); font-weight: 400; }
+.combo .caret { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--muted); font-size: 11px; }
+.combo ul {
+  position: absolute; z-index: 25; left: 0; top: calc(100% + 4px); min-width: 100%; width: max-content; max-width: min(460px, 92vw);
+  max-height: 320px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.16);
+}
+.combo li[role="option"] { padding: 7px 10px; border-radius: 4px; cursor: pointer; display: flex; flex-direction: column; gap: 1px; }
+.combo li[role="option"] .opt-hint { font-size: 12px; color: var(--muted); }
+.combo li[role="option"].active { background: var(--opt-active); }
+.combo li[role="option"][aria-selected="true"] { font-weight: 650; }
+.combo li[role="separator"] { height: 1px; background: var(--border-strong); margin: 4px 2px; }
+.combo li.note { padding: 7px 10px; font-size: 12px; color: var(--muted); cursor: default; }
+.combo mark { background: var(--mark); color: inherit; border-radius: 2px; }
+
+/* ---------- Summary row ---------- */
+main { padding: 0 0 24px; }
+.summary {
+  display: grid; grid-template-columns: 220px minmax(0, 1fr) 260px;
+  background: var(--panel); border-bottom: 1px solid var(--border);
+}
+.panel-title { margin: 0; font-size: 13px; font-weight: 650; color: var(--text); text-align: center; }
+.capacity { padding: 14px 16px 20px; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+.capacity .body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 6px; padding-top: 10px; }
+.capacity .big { font-size: 26px; font-weight: 700; }
+.capacity .split { color: var(--text-2); font-size: 13px; }
+.capacity .flex { color: #13775f; font-size: 13px; font-weight: 600; }
+:root[data-theme="dark"] .capacity .flex { color: var(--flex); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .capacity .flex { color: var(--flex); } }
+.capacity .note { color: var(--text-2); font-size: 12px; margin-top: 8px; }
+.chart-panel { padding: 14px 16px 10px; position: relative; min-width: 0; }
+#chart { margin-top: 6px; }
+#chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+#chart .tick { fill: var(--muted); font-size: 10px; }
+#chart .xlab { fill: var(--text-2); font-size: 11px; }
+#chart .xyear { fill: var(--muted); font-size: 10px; }
+.legend { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; color: var(--text-2); font-size: 12px; margin-top: 4px; }
+.chart-note { color: var(--text-2); font-size: 12px; text-align: center; margin: 8px 0 0; }
+.legend .key, .meter .key { display: inline-flex; gap: 6px; align-items: center; }
+.swatch-line { width: 18px; height: 2px; border-radius: 1px; display: inline-block; }
+.swatch-box { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+.tooltip {
+  position: absolute; pointer-events: none; z-index: 10; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font-size: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.16); white-space: nowrap;
+}
+.tooltip strong { display: block; margin-bottom: 2px; }
+.meters-panel { border-left: 1px solid var(--border); padding-top: 14px; display: flex; flex-direction: column; }
+.meters-panel .panel-title { padding: 0 18px 4px; }
+.meters { display: grid; grid-template-rows: repeat(3, 1fr); flex: 1; }
+.meter { padding: 12px 18px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.meter:last-child { border-bottom: 0; }
+.meter h3 { margin: 0; font-size: 13px; font-weight: 600; }
+.track { height: 10px; border: 1px solid var(--border-strong); border-radius: 3px; display: flex; gap: 2px; padding: 1px; background: var(--panel); }
+.seg { height: 100%; border-radius: 2px; }
+.meter .keys { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+.meter .used { font-size: 12px; color: var(--text-2); }
+
+/* ---------- Sections / tables ---------- */
+.panel-section { background: var(--panel); border-bottom: 1px solid var(--border); }
+.section-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px 8px; flex-wrap: wrap; }
+.section-head h2 { font-size: 14px; margin: 0; }
+.section-head .hint { color: var(--muted); font-size: 12px; }
+.section-head .actions { margin-left: auto; }
+.table-scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+/* Fixed layout: column widths come from <colgroup>, not from the rows on screen,
+   so columns stay put when you change page or filter. Long text wraps inside its cell. */
+table.fixed { table-layout: fixed; }
+table.fixed td { overflow-wrap: anywhere; }
+#uploads { min-width: 820px; }      /* narrow screens scroll sideways instead of squeezing */
+#groupTable { min-width: 560px; }
+th, td { padding: 10px 12px; text-align: left; vertical-align: middle; }
+thead th { font-size: 13px; font-weight: 650; border-bottom: 1px solid var(--border); white-space: nowrap; background: var(--panel); }
+tbody td { border-bottom: 1px solid var(--border); }
+th.r, td.r { text-align: right; }
+.sort-btn { background: none; border: 0; padding: 0; font-weight: 650; cursor: pointer; display: inline-flex; gap: 4px; align-items: center; }
+.sort-btn .arrow { color: var(--muted); font-size: 10px; width: 8px; }
+#groupTable td.limit-none { color: var(--muted); }
+.month-badge { background: var(--opt-active); color: var(--text); font-weight: 600; }
+.gbar { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.gbar .track { flex: 1; height: 8px; }
+.gbar .val { font-size: 12px; color: var(--text-2); white-space: nowrap; }
+#uploads tbody tr.row { cursor: pointer; }
+#uploads tbody tr.row:hover { background: var(--row-hover); }
+#uploads tbody tr.row.open { background: var(--row-open); }
+#uploads tbody tr.row.failed { background: var(--danger-bg); }
+.chev { width: 28px; color: var(--muted); text-align: center; }
+.chev span { display: inline-block; transition: transform .12s; font-size: 11px; }
+tr.open .chev span { transform: rotate(90deg); }
+.stack { display: flex; flex-direction: column; }
+.stack .s1 { font-weight: 500; }
+.stack .s2 { font-size: 12px; color: var(--muted); }
+#uploads td.email { overflow-wrap: anywhere; }
+.file { overflow-wrap: anywhere; }
+.badge { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 10px; background: var(--chip); color: var(--text-2); white-space: nowrap; }
+.badge.fail { background: var(--danger-bg); color: var(--danger); font-weight: 600; }
+.details td { background: var(--row-open); padding: 4px 16px 16px 52px; }
+.details dl { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 0; font-size: 12px; }
+.details dt { color: var(--muted); }
+.details dd { margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.empty { text-align: center; color: var(--muted); padding: 32px 12px; }
+.pager { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; gap: 12px; flex-wrap: wrap; color: var(--text-2); font-size: 12px; }
+.pager nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.pager button { min-width: 32px; height: 32px; border: 1px solid var(--border-strong); background: var(--panel); border-radius: 4px;
+  padding: 0 10px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.pager button:hover:not(:disabled):not([aria-current]) { background: var(--row-hover); }
+.pager button[aria-current="page"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); font-weight: 650; cursor: default; }
+.pager button:disabled { opacity: .45; cursor: default; }
+.pager .gap { min-width: 20px; text-align: center; color: var(--muted); }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 980px) {
+  .summary { grid-template-columns: 1fr; }
+  .capacity { border-right: 0; border-bottom: 1px solid var(--border); }
+  .meters-panel { border-left: 0; border-top: 1px solid var(--border); }
+  .meters { grid-template-rows: none; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .meter { border-bottom: 0; }
+}
+@media (max-width: 640px) {
+  .field, .field.dates { max-width: none; min-width: 0; flex-basis: 100%; }
+  .range { margin-left: 0; width: 100%; }
+  .brand .logo { height: 40px; margin-bottom: calc(-40px * 43 / 252); }
+  .info-pop { left: 0; right: auto; }
+  .details td { padding-left: 16px; }
+  .details dl { grid-template-columns: 1fr; }
+  .details dt { margin-top: 6px; }
+}
+@media print { .filters, .pager, .info-btn { display: none; } }
+</style>
+</head>
+<body>
+<header class="topbar{% if data.logo.light %} has-logo{% endif %}">
+  <div class="brand">
+    {% if data.logo.light %}<img class="logo logo-light" src="{{ data.logo.light }}" alt="ReversingLabs">{% endif %}
+    {% if data.logo.dark %}<img class="logo logo-dark" src="{{ data.logo.dark }}" alt="ReversingLabs">{% endif %}
+    <h1>Usage report</h1>
+    <span class="org">{{ data.organization }}</span>
+    <span class="generated num" id="generated"></span>
+  </div>
+  <div class="range">
+    <span class="num" id="dataRange"></span>
+    <button class="info-btn" id="infoBtn" type="button" aria-label="About the date range" aria-expanded="false" aria-controls="infoPop">i</button>
+    <div class="info-pop" id="infoPop" role="tooltip" hidden></div>
+  </div>
+</header>
+
+<section class="filters" aria-label="Filters">
+  <div class="filter-row">
+    <div class="field"><label for="cGroup">Group</label><div class="combo" id="comboGroup"></div></div>
+    <div class="field"><label for="cType">Upload type</label><div class="combo" id="comboType"></div></div>
+    <div class="field"><label for="cProject">Project</label><div class="combo" id="comboProject"></div></div>
+    <div class="field"><label for="cPackage">Package</label><div class="combo" id="comboPackage"></div></div>
+    <div class="field"><label for="cUser">User</label><div class="combo" id="comboUser"></div></div>
+    <div class="field"><label for="cMonth">Month</label><div class="combo" id="comboMonth"></div></div>
+    <div class="field dates">
+      <span class="label" id="dateLabel">Date range</span>
+      <div class="daterange" role="group" aria-labelledby="dateLabel">
+        <div class="datebox">
+          <input type="text" id="fFrom" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY" autocomplete="off" aria-label="From date, MM/DD/YYYY">
+          <button class="cal-btn" type="button" data-for="fFrom" aria-label="Choose from date" aria-haspopup="dialog" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg></button>
+        </div>
+        <span>to</span>
+        <div class="datebox">
+          <input type="text" id="fTo" inputmode="numeric" maxlength="10" placeholder="MM/DD/YYYY" autocomplete="off" aria-label="To date, MM/DD/YYYY">
+          <button class="cal-btn" type="button" data-for="fTo" aria-label="Choose to date" aria-haspopup="dialog" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="3" width="12" height="11" rx="1.5"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3"/></svg></button>
+        </div>
+        <div class="calendar" id="calendar" role="dialog" aria-label="Choose a date" hidden></div>
+      </div>
+    </div>
+    <button class="btn-clear" id="clearBtn" type="button">Clear filters</button>
+  </div>
+  <p class="caption" id="caption" aria-live="polite"></p>
+</section>
+
+<main>
+  <section class="summary" aria-label="Quota overview">
+    <div class="capacity">
+      <h2 class="panel-title">Monthly analysis capacity</h2>
+      <div class="body" id="capacity"></div>
+    </div>
+    <div class="chart-panel">
+      <h2 class="panel-title">Quota used per month</h2>
+      <div id="chart" role="img" aria-label="Quota used per month"></div>
+      <div class="legend" id="legend"></div>
+      <p class="chart-note" id="chartNote"></p>
+      <div class="tooltip" id="tip" hidden></div>
+    </div>
+    <div class="meters-panel">
+      <h2 class="panel-title" id="monthTitle">This month's usage</h2>
+      <div class="meters" id="meters"></div>
+    </div>
+  </section>
+
+  <section class="panel-section" aria-labelledby="groupsTitle">
+    <div class="section-head">
+      <h2 id="groupsTitle">Group usage</h2>
+      <span class="badge month-badge num" id="groupsMonth"></span>
+      <span class="hint" id="groupsHint" aria-live="polite"></span>
+    </div>
+    <div class="table-scroll">
+      <table id="groupTable" class="fixed">
+        <colgroup><col style="width:36%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"></colgroup>
+        <thead><tr>
+          <th>Group name</th><th class="r">Monthly limit</th><th class="r">Total used (GB)</th>
+          <th class="r">Filestream (GB)</th><th class="r">Projects (GB)</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pager" id="groupPager"></div>
+  </section>
+
+  <section class="panel-section" aria-labelledby="uploadsTitle">
+    <div class="section-head">
+      <h2 id="uploadsTitle">Uploads</h2>
+      <span class="hint">Click a row to see the full event. Click a column title to sort.</span>
+    </div>
+    <div class="table-scroll">
+      <table id="uploads" class="fixed">
+        <colgroup>
+          <col style="width:36px"><col style="width:120px"><col style="width:17%"><col style="width:22%">
+          <col><col style="width:120px"><col style="width:110px">
+        </colgroup>
+        <thead><tr>
+          <th class="chev" aria-label="Expand"></th>
+          <th data-sort="ts"></th>
+          <th data-sort="group" class="col-group"></th>
+          <th data-sort="email"></th>
+          <th data-sort="file"></th>
+          <th data-sort="type" class="col-type"></th>
+          <th data-sort="size" class="r"></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </section>
+</main>
+
+<!-- All report data. tojson escapes < > & ' so the data can never break out of this tag. -->
+<script type="application/json" id="report-data">{{ data|tojson }}</script>
+{% raw %}
+<script>
+"use strict";
+/*
+  Everything below runs in the viewer's browser.
+  Safety rule: data is only ever written with textContent / attributes,
+  never innerHTML — so text from the audit log can't run as code.
+*/
+const DATA = JSON.parse(document.getElementById("report-data").textContent);
+const USAGE = DATA.usage || {};
+const PAGE_SIZE = 10;          // uploads table: 10 uploads per page (same as groups)
+const GiB = 1073741824;        // the Portal counts 1 GB as 1,073,741,824 bytes
+const GROUP_PAGE_SIZE = 10;   // group table: 10 groups per page
+const MAX_OPTIONS = 200;       // dropdowns list at most this many matches (type to narrow down)
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const SVGNS = "http://www.w3.org/2000/svg";
+
+// ---------- small helpers ----------
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2, "0");
+const dayKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;   // for filtering/sorting
+const usDate = d => `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()}`;   // MM/DD/YYYY for display
+const monthKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+// US 12-hour clock: 3:52:48 PM (12 AM = midnight, 12 PM = noon)
+const hour12 = d => d.getHours() % 12 || 12;
+const ampm = d => (d.getHours() < 12 ? "AM" : "PM");
+const timeStr = d => `${hour12(d)}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${ampm(d)}`;
+const shortTime = d => `${hour12(d)}:${pad(d.getMinutes())} ${ampm(d)}`;
+
+function fmtGB(bytes) {
+  if (bytes == null) return "—";
+  const gb = bytes / GiB;
+  if (gb > 0 && gb < 0.01) {   // small files: show MB, KB or bytes instead of "0 GB"
+    if (bytes >= 1048576) return (bytes / 1048576).toLocaleString("en-US", { maximumFractionDigits: 2 }) + " MB";
+    if (bytes >= 1024) return (bytes / 1024).toLocaleString("en-US", { maximumFractionDigits: 1 }) + " KB";
+    return fmtNum(bytes) + " bytes";
+  }
+  const whole = Math.abs(gb - Math.round(gb)) < 0.005;
+  return gb.toLocaleString("en-US", whole ? { maximumFractionDigits: 0 }
+                                          : { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " GB";
+}
+const fmtNum = n => (n == null ? "—" : Number(n).toLocaleString("en-US"));
+
+function el(tag, props, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") node.className = v;
+    else if (k === "text") node.textContent = v;
+    else if (k === "style") Object.assign(node.style, v);
+    else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else node.setAttribute(k, v);
+  }
+  for (const c of children) if (c != null) node.append(c);  // strings become text nodes
+  return node;
+}
+function svg(tag, attrs) {
+  const node = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs || {})) node.setAttribute(k, v);
+  return node;
+}
+
+// ---------- prepare rows and the Group → Project → Package hierarchy ----------
+const ROWS = DATA.rows.map((r, i) => {
+  const d = new Date(r.ts);
+  return Object.assign(r, { i, d, day: dayKey(d), month: monthKey(d) });
+});
+
+// Report range = the export's range (normally the 90 days before the export).
+const NOW = new Date();
+const RANGE_START = new Date(DATA.range_start ?? DATA.generated_at);
+const RANGE_END = new Date(DATA.range_end ?? DATA.generated_at);
+const AUDIT_LOG_RELEASE = new Date(2026, 5, 3);  // June 3, 2026: first day audit logs exist in the Portal
+const FIRST_DAY = dayKey(RANGE_START), LAST_DAY = dayKey(RANGE_END);
+
+const GROUPS = new Map();    // group_id -> name
+const PROJECTS = new Map();  // project_id -> { name, group_id }
+const PACKAGES = new Map();  // package_id -> { name, project_id, group_id }
+const USERS = new Map();     // email -> name
+for (const g of USAGE.groups_usage || []) if (g.group_id != null) GROUPS.set(String(g.group_id), g.name);
+for (const r of ROWS) {
+  if (r.group_id && !GROUPS.has(r.group_id)) GROUPS.set(r.group_id, r.group);
+  if (r.project_id && !PROJECTS.has(r.project_id)) PROJECTS.set(r.project_id, { name: r.project, group_id: r.group_id });
+  if (r.package_id && !PACKAGES.has(r.package_id)) PACKAGES.set(r.package_id, { name: r.package, project_id: r.project_id, group_id: r.group_id });
+  if (r.email && !USERS.has(r.email)) USERS.set(r.email, r.user);
+}
+const byLabel = (a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" });
+
+// ---------- state ----------
+const state = {
+  group: "", type: "", project: "", pkg: "", user: "",
+  from: FIRST_DAY, to: LAST_DAY,
+  sort: "ts", dir: -1, page: 0, open: new Set(), groupPage: 0,
+};
+
+function passes(r, skip) {
+  if (skip !== "group" && state.group && r.group_id !== state.group) return false;
+  if (state.type && r.type !== state.type) return false;
+  if (state.project && r.project_id !== state.project) return false;
+  if (state.pkg && r.package_id !== state.pkg) return false;
+  if (state.user && r.email !== state.user) return false;
+  if (skip !== "date" && (r.day < state.from || r.day > state.to)) return false;
+  return true;
+}
+const filtered = () => ROWS.filter(r => passes(r));
+
+/* Hierarchy rules (Group → Project → Package):
+   - picking a project also picks its group; picking a package also picks its project and group
+   - changing the group clears a project/package that isn't in it; clearing the project clears the package */
+function setGroup(id) {
+  state.group = id;
+  if (state.project && PROJECTS.get(state.project)?.group_id !== id) state.project = "";
+  if (state.pkg && PACKAGES.get(state.pkg)?.group_id !== id) state.pkg = "";
+  if (!id) state.project = state.pkg = "";
+}
+/* Upload type: Filestream files have no project or package, so choosing Filestream clears
+   those two filters; choosing a project or package switches the type to Projects. */
+function setType(t) {
+  state.type = t;
+  if (t === "filestream_file") state.project = state.pkg = "";
+}
+function setProject(id) {
+  state.project = id;
+  if (id) { state.group = PROJECTS.get(id).group_id; state.type = "version"; }
+  if (!id || (state.pkg && PACKAGES.get(state.pkg)?.project_id !== id)) state.pkg = "";
+}
+function setPackage(id) {
+  state.pkg = id;
+  if (id) { const p = PACKAGES.get(id); state.project = p.project_id; state.group = p.group_id; state.type = "version"; }
+}
+
+// ---------- autocomplete dropdown ----------
+/*
+  A text box you can type in to narrow the list (like a search box with suggestions).
+  Follows the ARIA "combobox" pattern so keyboards and screen readers work:
+  ↓/↑ move, Enter picks, Esc closes.
+*/
+/* disabled() returns "" when the box is usable, or the reason it is off (shown on hover).
+   emptyText is shown when the list itself is empty; "No matches" when typing finds nothing. */
+function makeCombo(host, { id, allLabel, options, value, onPick, disabled = () => "", emptyText = "No matches", otherLabel = "" }) {
+  const input = el("input", { id, type: "text", role: "combobox", "aria-autocomplete": "list", "aria-expanded": "false",
+    "aria-controls": id + "-list", autocomplete: "off", spellcheck: "false", placeholder: "Type to search…" });
+  const list = el("ul", { id: id + "-list", role: "listbox", hidden: "" });
+  host.replaceChildren(input, el("span", { class: "caret", "aria-hidden": "true", text: "▾" }), list);
+
+  let typed = false, items = [], active = -1;
+  const labelOf = v => (v ? (options().find(o => o.value === v)?.label ?? otherLabel) : allLabel);
+  const showValue = () => { input.value = labelOf(value()); typed = false; };
+
+  function highlight(text, q) {
+    const i = q ? text.toLowerCase().indexOf(q) : -1;
+    if (i < 0) return [text];
+    return [text.slice(0, i), el("mark", { text: text.slice(i, i + q.length) }), text.slice(i + q.length)];
+  }
+  function render() {
+    const q = typed ? input.value.trim().toLowerCase() : "";
+    const all = options();
+    const matches = q ? all.filter(o => o.label.toLowerCase().includes(q) || (o.hint || "").toLowerCase().includes(q)) : all;
+    items = [{ value: "", label: allLabel }, ...matches.slice(0, MAX_OPTIONS)];
+    const lis = items.map((o, idx) => el("li", { role: "option", id: `${id}-opt-${idx}`, "aria-selected": String(o.value === value()),
+        onmousedown: e => { e.preventDefault(); pick(idx); }, onmousemove: () => setActive(idx) },
+      el("span", {}, ...highlight(o.label, q)),
+      o.hint ? el("span", { class: "opt-hint" }, ...highlight(o.hint, q)) : null));
+    lis.splice(1, 0, el("li", { role: "separator" }));   // divider under "All …"
+    if (!all.length) lis.push(el("li", { class: "note", text: emptyText }));
+    else if (!matches.length) lis.push(el("li", { class: "note", text: "No matches" }));
+    if (matches.length > MAX_OPTIONS) lis.push(el("li", { class: "note", text: `Type to narrow down — ${fmtNum(matches.length - MAX_OPTIONS)} more` }));
+    list.replaceChildren(...lis);
+    setActive(q && matches.length ? 1 : Math.max(items.findIndex(o => o.value === value()), 0));
+  }
+  function setActive(idx) {
+    active = idx;
+    list.querySelectorAll('[role="option"]').forEach((li, n) => li.classList.toggle("active", n === idx));
+    const li = $(`${id}-opt-${idx}`);
+    if (li) { input.setAttribute("aria-activedescendant", li.id); li.scrollIntoView({ block: "nearest" }); }
+  }
+  function open() { if (!list.hidden) return; list.hidden = false; input.setAttribute("aria-expanded", "true"); render(); }
+  function close() { list.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); showValue(); }
+  function pick(idx) { const o = items[idx]; if (!o) return; close(); onPick(o.value); }
+
+  input.addEventListener("focus", () => { open(); input.select(); });
+  input.addEventListener("click", open);
+  input.addEventListener("input", () => { typed = true; list.hidden ? open() : render(); });
+  input.addEventListener("blur", close);
+  input.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown") { e.preventDefault(); if (list.hidden) open(); else setActive(Math.min(active + 1, items.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive(Math.max(active - 1, 0)); }
+    else if (e.key === "Enter") { if (!list.hidden) { e.preventDefault(); pick(active); } }
+    else if (e.key === "Escape") { if (!list.hidden) { e.preventDefault(); close(); input.select(); } }
+  });
+  return { refresh: () => {
+    const off = disabled();
+    input.disabled = !!off;
+    input.title = off || "";
+    if (off) close();
+    if (list.hidden) showValue(); else render();
+  } };
+}
+
+const groupOptions = () => [...GROUPS].map(([value, label]) => ({ value, label })).sort(byLabel);
+const projectOptions = () => [...PROJECTS]
+  .filter(([, p]) => !state.group || p.group_id === state.group)
+  .map(([value, p]) => ({ value, label: p.name, hint: state.group ? "" : GROUPS.get(p.group_id) || "" })).sort(byLabel);
+const packageOptions = () => [...PACKAGES]
+  .filter(([, k]) => state.project ? k.project_id === state.project : !state.group || k.group_id === state.group)
+  .map(([value, k]) => ({ value, label: k.name,
+    hint: state.project ? "" : [PROJECTS.get(k.project_id)?.name, state.group ? "" : GROUPS.get(k.group_id)].filter(Boolean).join(" · ") }))
+  .sort(byLabel);
+/* Users list: only people who uploaded in the selected group / project / package
+   (the most specific one picked). With nothing picked, everyone is listed. */
+function activeUsers() {
+  if (!state.group && !state.project && !state.pkg) return null;   // null = no narrowing
+  const set = new Set();
+  for (const r of ROWS)
+    if ((!state.group || r.group_id === state.group) && (!state.project || r.project_id === state.project) &&
+        (!state.pkg || r.package_id === state.pkg) && r.email) set.add(r.email);
+  return set;
+}
+const userOptions = () => {
+  const only = activeUsers();
+  return [...USERS].filter(([email]) => !only || only.has(email))
+    .map(([value, name]) => ({ value, label: name, hint: name !== value ? value : "" })).sort(byLabel);
+};
+/* Month quick filter: picking a month fills the date range with that month (kept inside
+   the report period). It shows a month only while the date range is exactly that month.
+   Months before audit logs existed (06/03/2026) are left out — they can't have data. */
+const releaseKey = dayKey(AUDIT_LOG_RELEASE);
+const monthBounds = m => {
+  const [y, mo] = m.split("-").map(Number);
+  const first = `${m}-01`, last = `${m}-${pad(new Date(y, mo, 0).getDate())}`;
+  return { from: first < FIRST_DAY ? FIRST_DAY : first, to: last > LAST_DAY ? LAST_DAY : last };
+};
+const monthOptions = () => monthsBetween((FIRST_DAY > releaseKey ? FIRST_DAY : releaseKey).slice(0, 7), LAST_DAY.slice(0, 7))
+  .reverse().map(m => ({ value: m, label: `${MONTHS_LONG[+m.slice(5) - 1]} ${m.slice(0, 4)}` }));
+const pickedMonth = () => {
+  if (state.from === FIRST_DAY && state.to === LAST_DAY) return "";              // whole period → "All months"
+  const m = state.from.slice(0, 7), b = monthBounds(m);
+  return state.to.slice(0, 7) === m && b.from === state.from && b.to === state.to ? m : "custom";
+};
+function setMonth(m) { Object.assign(state, m ? monthBounds(m) : { from: FIRST_DAY, to: LAST_DAY }); }
+
+// A picked user who wasn't active in the newly chosen group/project/package is cleared.
+function dropInactiveUser() { const only = activeUsers(); if (state.user && only && !only.has(state.user)) state.user = ""; }
+
+const typeOptions = () => [{ value: "version", label: "Projects" }, { value: "filestream_file", label: "Filestream" }];
+
+/* When Project and Package can be used (Group → Project → Package, step by step):
+   - Project: needs a specific group, and not Filestream (filestream files have no project)
+   - Package: needs a specific project, and not Filestream */
+const projectOff = () => state.type === "filestream_file" ? "Not used for Filestream uploads"
+  : !state.group ? "Select a group first" : "";
+const packageOff = () => state.type === "filestream_file" ? "Not used for Filestream uploads"
+  : !state.group ? "Select a group first" : !state.project ? "Select a project first" : "";
+
+const combos = [
+  makeCombo($("comboGroup"), { id: "cGroup", allLabel: "All groups", options: groupOptions, value: () => state.group, onPick: v => { setGroup(v); dropInactiveUser(); onFilterChange(); } }),
+  makeCombo($("comboType"), { id: "cType", allLabel: "All", options: typeOptions, value: () => state.type, onPick: v => { setType(v); onFilterChange(); } }),
+  makeCombo($("comboProject"), { id: "cProject", allLabel: "All projects", options: projectOptions, value: () => state.project, onPick: v => { setProject(v); dropInactiveUser(); onFilterChange(); },
+    disabled: projectOff, emptyText: "No activities in selected group" }),
+  makeCombo($("comboPackage"), { id: "cPackage", allLabel: "All packages", options: packageOptions, value: () => state.pkg, onPick: v => { setPackage(v); dropInactiveUser(); onFilterChange(); },
+    disabled: packageOff, emptyText: "No activities in selected Project" }),
+  makeCombo($("comboUser"), { id: "cUser", allLabel: "All users", options: userOptions, value: () => state.user, onPick: v => { state.user = v; onFilterChange(); },
+    emptyText: "No activities in selected group" }),
+  makeCombo($("comboMonth"), { id: "cMonth", allLabel: "All months", options: monthOptions, value: pickedMonth, onPick: v => { setMonth(v); onFilterChange(); },
+    otherLabel: "Custom range" }),
+];
+
+// ---------- date range (always MM/DD/YYYY) ----------
+/*
+  Our own date boxes + calendar instead of the browser's date picker, because the
+  browser shows dates in the computer's regional format (e.g. DD.MM.YYYY).
+  Inside, dates are kept as "YYYY-MM-DD" text — that sorts correctly — and only
+  shown as MM/DD/YYYY. Only days inside the report range can be picked.
+*/
+const fFrom = $("fFrom"), fTo = $("fTo"), cal = $("calendar");
+const keyToUs = k => `${k.slice(5, 7)}/${k.slice(8, 10)}/${k.slice(0, 4)}`;
+function usToKey(text) {
+  const m = /^\s*(\d{1,2})\/(\d{1,2})\/(\d{4})\s*$/.exec(text);
+  if (!m) return null;
+  const d = new Date(+m[3], +m[1] - 1, +m[2]);
+  return d.getMonth() === +m[1] - 1 && d.getDate() === +m[2] ? dayKey(d) : null;   // rejects 02/31 etc.
+}
+const clampDay = k => (k < FIRST_DAY ? FIRST_DAY : k > LAST_DAY ? LAST_DAY : k);
+function setRange(which, key) {
+  state[which] = clampDay(key);
+  if (state.from > state.to) [state.from, state.to] = [state.to, state.from];
+  onFilterChange();
+}
+for (const [input, which] of [[fFrom, "from"], [fTo, "to"]]) {
+  const commit = () => {
+    const key = usToKey(input.value);
+    if (!key) { input.setAttribute("aria-invalid", "true"); return; }   // keep the text so it can be fixed
+    input.removeAttribute("aria-invalid");
+    if (key !== state[which] || clampDay(key) !== key) setRange(which, key); else input.value = keyToUs(state[which]);
+  };
+  input.addEventListener("change", commit);
+  input.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); commit(); } });
+  input.addEventListener("input", () => input.removeAttribute("aria-invalid"));
+}
+
+// Calendar popup
+let calFor = null, calMonth = null;   // which box it belongs to, and the month shown ("YYYY-MM")
+function openCalendar(btn) {
+  calFor = btn.dataset.for === "fFrom" ? "from" : "to";
+  calMonth = state[calFor].slice(0, 7);
+  cal.classList.toggle("right", calFor === "to");
+  document.querySelectorAll(".cal-btn").forEach(b => b.setAttribute("aria-expanded", String(b === btn)));
+  cal.hidden = false;
+  renderCalendar(true);
+}
+function closeCalendar(focusBack) {
+  if (cal.hidden) return;
+  cal.hidden = true;
+  document.querySelectorAll(".cal-btn").forEach(b => b.setAttribute("aria-expanded", "false"));
+  if (focusBack) document.querySelector(`.cal-btn[data-for="${calFor === "from" ? "fFrom" : "fTo"}"]`).focus();
+}
+function renderCalendar(focusSelected) {
+  const [y, m] = calMonth.split("-").map(Number);
+  const first = new Date(y, m - 1, 1), daysIn = new Date(y, m, 0).getDate();
+  const prev = monthKey(new Date(y, m - 2, 1)), next = monthKey(new Date(y, m, 1));
+  const head = el("div", { class: "cal-head" },
+    el("button", { type: "button", "aria-label": "Previous month", disabled: prev < FIRST_DAY.slice(0, 7) ? "" : null,
+      onclick: () => { calMonth = prev; renderCalendar(); }, text: "‹" }),
+    el("span", { "aria-live": "polite", text: `${MONTHS_LONG[m - 1]} ${y}` }),
+    el("button", { type: "button", "aria-label": "Next month", disabled: next > LAST_DAY.slice(0, 7) ? "" : null,
+      onclick: () => { calMonth = next; renderCalendar(); }, text: "›" }));
+  const grid = el("div", { class: "cal-grid", role: "grid" },
+    ...["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(d => el("span", { class: "dow", "aria-hidden": "true", text: d })));
+  for (let i = 0; i < first.getDay(); i++) grid.append(el("span"));
+  let focusEl = null;
+  for (let d = 1; d <= daysIn; d++) {
+    const key = `${calMonth}-${pad(d)}`, out = key < FIRST_DAY || key > LAST_DAY;
+    const btn = el("button", { type: "button", "data-key": key, disabled: out ? "" : null,
+      class: key >= state.from && key <= state.to ? "in-range" : null,
+      "aria-pressed": String(key === state[calFor]), "aria-label": keyToUs(key) + (out ? " (outside the report range)" : ""),
+      tabindex: key === state[calFor] ? 0 : -1, text: String(d),
+      onclick: () => { closeCalendar(true); setRange(calFor, key); } });
+    if (key === state[calFor]) focusEl = btn;
+    grid.append(btn);
+  }
+  cal.replaceChildren(head, grid, el("div", { class: "cal-note", text: `Available: ${keyToUs(FIRST_DAY)} – ${keyToUs(LAST_DAY)}` }));
+  if (focusSelected) (focusEl || grid.querySelector("button:not(:disabled)") || head.querySelector("button:not(:disabled)"))?.focus();
+}
+document.querySelectorAll(".cal-btn").forEach(btn => btn.addEventListener("click", e => {
+  e.stopPropagation();
+  if (!cal.hidden && btn.getAttribute("aria-expanded") === "true") closeCalendar(); else openCalendar(btn);
+}));
+cal.addEventListener("click", e => e.stopPropagation());
+cal.addEventListener("keydown", e => {
+  if (e.key === "Escape") { e.preventDefault(); closeCalendar(true); return; }
+  const cur = document.activeElement?.dataset?.key;   // arrow keys move between days
+  const moves = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 };
+  if (!cur || !(e.key in moves)) return;
+  e.preventDefault();
+  const d = new Date(+cur.slice(0, 4), +cur.slice(5, 7) - 1, +cur.slice(8, 10) + moves[e.key]);
+  const key = clampDay(dayKey(d));
+  if (key.slice(0, 7) !== calMonth) { calMonth = key.slice(0, 7); renderCalendar(); }
+  cal.querySelector(`button[data-key="${key}"]`)?.focus();
+});
+document.addEventListener("click", () => closeCalendar());
+$("clearBtn").addEventListener("click", () => {
+  Object.assign(state, { group: "", type: "", project: "", pkg: "", user: "", from: FIRST_DAY, to: LAST_DAY });
+  onFilterChange();
+});
+function refreshFilters() {
+  combos.forEach(c => c.refresh());
+  for (const input of [fFrom, fTo]) input.removeAttribute("aria-invalid");
+  fFrom.value = keyToUs(state.from); fTo.value = keyToUs(state.to);
+}
+function onFilterChange() { state.page = 0; state.groupPage = 0; state.open.clear(); renderAll(); }
+
+// ---------- header ----------
+function renderHeader() {
+  const g = new Date(DATA.generated_at);
+  $("generated").textContent = `Generated ${usDate(g)} ${shortTime(g)}`;
+  $("dataRange").textContent = `Data from ${usDate(RANGE_START)} to ${usDate(RANGE_END)}`;
+  const days = Math.round((RANGE_END - RANGE_START) / 86400000);  // export length (90 by default, or --days)
+  const about = DATA.range_exact
+    ? `This report contains data for the selected period, ${usDate(RANGE_START)} – ${usDate(RANGE_END)} (${days} days). ` +
+      "Dates and times are shown in your local time zone."
+    : DATA.range_from_export
+    ? `This report contains data from the last ${days} days before the audit log was exported on ${usDate(RANGE_END)} ` +
+      `(${usDate(RANGE_START)} – ${usDate(RANGE_END)}). Dates and times are shown in your local time zone.`
+    : `This report contains the uploads found in the audit log file, from the first to the last one ` +
+      `(${usDate(RANGE_START)} – ${usDate(RANGE_END)}). Dates and times are shown in your local time zone.`;
+  const parts = [el("p", { text: about })];
+  // Audit logs were released on June 3, 2026 — nothing earlier exists, so say so when the range reaches back further.
+  if (RANGE_START < AUDIT_LOG_RELEASE)
+    parts.push(el("p", { text: `Audit logs are available from ${usDate(AUDIT_LOG_RELEASE)}. ` +
+      "Uploads made before that date are not recorded and cannot be shown in this report." }));
+  $("infoPop").replaceChildren(...parts);
+  // Disclaimer under the chart: the whole report period (not the date filter), since the chart shows every month.
+  $("chartNote").textContent = `Shows uploads from ${usDate(RANGE_START)} to ${usDate(RANGE_END)}` +
+    (DATA.range_exact ? ` (${days} days)` : DATA.range_from_export ? ` (last ${days} days)` : "") +
+    ", based on audit log data." +
+    (RANGE_START < AUDIT_LOG_RELEASE
+      ? ` Audit logs are available only from ${usDate(AUDIT_LOG_RELEASE)}, so months before that show no uploads ` +
+        "and monthly totals may differ slightly from the usage shown in the Portal."
+      : "");
+  // The usage API figures are for the current month, e.g. "This month's usage (October)".
+  $("monthTitle").textContent = `This month's usage (${MONTHS_LONG[g.getMonth()]})`;
+  const btn = $("infoBtn"), pop = $("infoPop");
+  const show = v => { pop.hidden = !v; btn.setAttribute("aria-expanded", String(v)); };
+  // Click always opens (hovering already opened it, so a toggle would close it again);
+  // a click elsewhere, Esc or moving away closes it.
+  btn.addEventListener("click", e => { e.stopPropagation(); show(true); });
+  btn.addEventListener("mouseenter", () => show(true));
+  btn.addEventListener("mouseleave", () => show(false));
+  btn.addEventListener("blur", () => show(false));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") show(false); });
+  document.addEventListener("click", () => show(false));
+}
+
+// ---------- left panel: monthly quota ----------
+function renderCapacity() {
+  const kids = [
+    // Big number = Portal capacity + CLI capacity (Flex is shown separately below it)
+    el("div", { class: "big num", text: fmtGB((USAGE.total_capacity_bytes_portal || 0) + (USAGE.total_capacity_bytes_cli || 0)) }),
+    el("div", { class: "split num", text: `Portal ${fmtGB(USAGE.total_capacity_bytes_portal)} / CLI ${fmtGB(USAGE.total_capacity_bytes_cli)}` }),
+  ];
+  if (USAGE.promo_capacity_bytes) kids.push(el("div", { class: "flex num", text: `Flex (+${fmtGB(USAGE.promo_capacity_bytes)})` }));
+  kids.push(el("div", { class: "note", text: "Analysis capacity resets every month" }));
+  $("capacity").replaceChildren(...kids);
+}
+
+// ---------- middle panel: quota used per month ----------
+function monthsBetween(a, b) {
+  const out = []; let [y, m] = a.split("-").map(Number); const [ey, em] = b.split("-").map(Number);
+  while (y < ey || (y === ey && m <= em)) { out.push(`${y}-${pad(m)}`); if (++m > 12) { m = 1; y++; } }
+  return out;
+}
+/* Pick a tick step (in GB) that lands exactly on both capacity lines, e.g. 0, 500, 1,000 … 3,000. */
+function axisSteps(topGB, marksGB) {
+  const nice = [];
+  for (let p = -1; p <= 6; p++) for (const n of [1, 2, 2.5, 5]) nice.push(n * 10 ** p);
+  const fits = s => marksGB.every(m => Math.abs(m / s - Math.round(m / s)) < 1e-6);
+  const ok = nice.filter(s => topGB / s <= 8 && fits(s));
+  return ok.find(s => topGB / s >= 4) || ok[0] || nice.find(s => topGB / s <= 6) || 1;
+}
+function renderChart() {
+  const host = $("chart");
+  const months = monthsBetween(FIRST_DAY.slice(0, 7), LAST_DAY.slice(0, 7));
+  // Follows every filter except the date range, so all months stay visible;
+  // months outside the picked date range are shown lighter.
+  const totals = Object.fromEntries(months.map(m => [m, 0]));
+  for (const r of ROWS) if (passes(r, "date") && r.month in totals) totals[r.month] += r.size;
+
+  // Same logic as the "Monthly analysis capacity" panel:
+  const cap = (USAGE.total_capacity_bytes_portal || 0) + (USAGE.total_capacity_bytes_cli || 0);  // Analysis capacity = Portal + CLI
+  const flex = cap + (USAGE.promo_capacity_bytes || 0);         // Analysis capacity + Flex (always the top line)
+  const maxBar = Math.max(0, ...months.map(m => totals[m]));
+  const step = axisSteps(Math.max(flex, maxBar) / GiB, [cap / GiB, flex / GiB].filter(v => v > 0)) * GiB;
+  const yMax = Math.max(flex, Math.ceil(maxBar / step) * step, step);
+
+  const W = Math.max(host.clientWidth, 300), H = 240, M = { t: 10, r: 8, b: 38, l: 64 };
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  const y = v => M.t + ih - (v / yMax) * ih;
+  const band = iw / Math.max(months.length, 1), bw = Math.max(Math.min(band * 0.72, 90), 4);
+
+  const s = svg("svg", { viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: "none" });
+  for (let v = 0; v <= yMax + 1; v += step) {
+    s.append(svg("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), stroke: "var(--grid)", "stroke-width": 1 }));
+    const t = svg("text", { x: M.l - 8, y: y(v) + 3, "text-anchor": "end", class: "tick" }); t.textContent = fmtGB(v);
+    s.append(t);
+  }
+  const every = Math.ceil(months.length / Math.max(Math.floor(iw / 44), 1));
+  months.forEach((m, i) => {
+    const x = M.l + band * i + (band - bw) / 2, v = totals[m];
+    const inRange = m >= state.from.slice(0, 7) && m <= state.to.slice(0, 7);
+    const h = Math.max(y(0) - y(v), v > 0 ? 2 : 0), top = y(0) - h, rad = Math.min(4, bw / 2, h);
+    if (h > 0) s.append(svg("path", { fill: inRange ? "var(--bar)" : "var(--bar-dim)",
+      d: `M${x},${y(0)} V${top + rad} Q${x},${top} ${x + rad},${top} H${x + bw - rad} Q${x + bw},${top} ${x + bw},${top + rad} V${y(0)} Z` }));
+    // Invisible, taller hover area: easier to hit than the bar itself.
+    const [yy, mm] = m.split("-");
+    const label = `${MONTHS_LONG[+mm - 1]} ${yy}`;
+    const hit = svg("rect", { x: M.l + band * i, y: M.t, width: band, height: ih, fill: "transparent", tabindex: 0,
+      "aria-label": `${label}: Portal usage ${fmtGB(v)}` });
+    hit.addEventListener("mousemove", e => showTip(e, label, v));
+    hit.addEventListener("mouseleave", hideTip);
+    hit.addEventListener("focus", e => showTip(e, label, v, x + bw / 2));
+    hit.addEventListener("blur", hideTip);
+    s.append(hit);
+    if (i % every === 0) {
+      const t1 = svg("text", { x: M.l + band * i + band / 2, y: H - 22, "text-anchor": "middle", class: "xlab" }); t1.textContent = MONTHS[+mm - 1];
+      const t2 = svg("text", { x: M.l + band * i + band / 2, y: H - 9, "text-anchor": "middle", class: "xyear" }); t2.textContent = yy;
+      s.append(t1, t2);
+    }
+  });
+  s.append(svg("line", { x1: M.l, x2: W - M.r, y1: y(0), y2: y(0), stroke: "var(--border-strong)", "stroke-width": 1 }));
+  if (cap) s.append(svg("line", { x1: M.l, x2: W - M.r, y1: y(cap), y2: y(cap), stroke: "var(--cap)", "stroke-width": 2, "pointer-events": "none" }));
+  if (flex > cap) s.append(svg("line", { x1: M.l, x2: W - M.r, y1: y(flex), y2: y(flex), stroke: "var(--flex)", "stroke-width": 2, "pointer-events": "none" }));
+  host.replaceChildren(s);
+
+  const keys = [];
+  if (cap) keys.push(el("span", { class: "key" }, el("span", { class: "swatch-line", style: { background: "var(--cap)" } }), `Analysis capacity (${fmtGB(cap)})`));
+  if (flex > cap) keys.push(el("span", { class: "key" }, el("span", { class: "swatch-line", style: { background: "var(--flex)" } }), `Flex (${fmtGB(flex)})`));
+  keys.push(el("span", { class: "key" }, el("span", { class: "swatch-box", style: { background: "var(--bar)" } }), "Total quota used (CLI+Portal)"));
+  $("legend").replaceChildren(...keys);
+}
+function showTip(e, label, bytes, svgX) {
+  const tip = $("tip"), panel = tip.parentElement.getBoundingClientRect();
+  tip.replaceChildren(el("strong", { text: label }), el("div", { class: "num", text: `Portal usage: ${fmtGB(bytes)}` }));
+  tip.hidden = false;
+  const px = e.clientX ? e.clientX - panel.left : (svgX || 0) + 16;
+  tip.style.left = Math.min(Math.max(px + 12, 8), panel.width - tip.offsetWidth - 8) + "px";
+  tip.style.top = "40px";
+}
+function hideTip() { $("tip").hidden = true; }
+
+// ---------- right panel: this month's usage ----------
+function meter(title, segments, total, usedText, keys) {
+  const track = el("div", { class: "track", role: "img", "aria-label": `${title}: ${usedText}` },
+    ...segments.filter(sg => sg.value > 0).map(sg => el("div", { class: "seg",
+      style: { width: `max(2px, ${Math.min(sg.value / (total || 1), 1) * 100}%)`, background: sg.color } })));
+  return el("div", { class: "meter" }, el("h3", { text: title }), track,
+    keys ? el("div", { class: "keys" }, ...keys.map(k => el("span", { class: "key" },
+      el("span", { class: "swatch-box", style: { background: k.color } }), el("span", { class: "num", text: k.label })))) : null,
+    el("span", { class: "used num", text: usedText }));
+}
+function renderMeters() {
+  const total = USAGE.total_capacity_bytes || 0;
+  const cli = USAGE.this_month_used_bytes_cli || 0, portal = USAGE.this_month_used_bytes_portal || 0;
+  const dl = USAGE.downloaded_this_month_bytes || 0;
+  $("meters").replaceChildren(
+    meter("Analysis capacity", [{ value: cli, color: "var(--cli)" }, { value: portal, color: "var(--portal)" }], total,
+      `${fmtGB(cli + portal)} / ${fmtGB(total)} used`,
+      [{ color: "var(--cli)", label: `CLI ${fmtGB(cli)}` }, { color: "var(--portal)", label: `Portal ${fmtGB(portal)}` }]),
+    meter("Portal download limit", [{ value: dl, color: "var(--portal)" }], USAGE.download_capacity_bytes,
+      `${fmtGB(dl)} / ${fmtGB(USAGE.download_capacity_bytes)} used`),
+    meter("Portal package limit", [{ value: USAGE.package_count || 0, color: "var(--portal)" }], USAGE.max_packages,
+      `${fmtNum(USAGE.package_count)} / ${fmtNum(USAGE.max_packages)} used`),
+  );
+}
+
+// ---------- group table (follows the filters) ----------
+/* Sizes in this table are plain numbers because the column titles already say "(GB)". */
+function gbNumber(bytes) {
+  const gb = (bytes || 0) / GiB;
+  if (gb > 0 && gb < 0.01) return "<0.01";
+  return gb.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+const GROUP_LIST = (USAGE.groups_usage || []).map(g => {
+  const projects = g.projects_usage_bytes || 0, filestream = g.filestream_usage_bytes || 0;
+  const pl = g.projects_usage_limit_bytes, fl = g.filestream_usage_limit_bytes;
+  return {
+    id: g.group_id != null ? String(g.group_id) : "", name: g.name,
+    projects, filestream, used: projects + filestream,
+    // Monthly limit = projects limit + filestream limit; no value from the Portal means "no limit".
+    limit: pl == null && fl == null ? null : (pl || 0) + (fl || 0),
+  };
+}).sort((a, b) => b.used - a.used || a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+
+/*
+  Group usage for the selected filters, built from two sources:
+  - the CURRENT month comes from the Portal's usage API (the Portal's own figures), and
+  - every earlier month is added up from the audit log.
+  The usage API only knows totals per group (split into filestream / projects), so it is
+  used when the filters allow that: no project, package or user filter, and a date range
+  that covers the whole current month so far. Otherwise the current month also comes from
+  the audit log. The monthly limit is always today's limit (no history is available).
+*/
+const CUR_MONTH = monthKey(new Date(DATA.generated_at));
+const CUR_FIRST = CUR_MONTH + "-01";
+function groupRows() {
+  const inRange = state.from <= LAST_DAY && state.to >= CUR_FIRST;               // range touches this month
+  const useApi = inRange && state.from <= CUR_FIRST && state.to >= LAST_DAY &&
+                 !state.project && !state.pkg && !state.user;
+  const byKey = new Map();
+  const get = (key, name) => {
+    if (!byKey.has(key)) byKey.set(key, { id: key, name, limit: undefined, api: false, filestream: 0, projects: 0 });
+    return byKey.get(key);
+  };
+  for (const g of GROUP_LIST) {
+    if (state.group && g.id !== state.group) continue;
+    const row = get(g.id || "name:" + g.name, g.name);
+    row.limit = g.limit; row.api = true;
+    if (useApi) {
+      if (state.type !== "version") row.filestream += g.filestream;
+      if (state.type !== "filestream_file") row.projects += g.projects;
+    }
+  }
+  for (const r of ROWS) {
+    if (!passes(r) || (useApi && r.month === CUR_MONTH)) continue;              // API already counted this month
+    const row = get(r.group_id, r.group);
+    if (r.type === "filestream_file") row.filestream += r.size; else row.projects += r.size;
+  }
+  // Without project/package/user filters every Portal group is listed (even at 0);
+  // with them, only groups that have matching uploads.
+  const narrow = state.project || state.pkg || state.user;
+  return {
+    useApi, inRange,
+    list: [...byKey.values()].map(g => ({ ...g, used: g.filestream + g.projects }))
+      .filter(g => g.used > 0 || (g.api && !narrow))
+      .sort((a, b) => b.used - a.used || a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+  };
+}
+
+function renderGroups() {
+  const { list } = groupRows();   // current month from the usage API when possible (see groupRows)
+  const pages = Math.max(Math.ceil(list.length / GROUP_PAGE_SIZE), 1);
+  state.groupPage = Math.min(state.groupPage, pages - 1);
+  const start = state.groupPage * GROUP_PAGE_SIZE;
+  const slice = list.slice(start, start + GROUP_PAGE_SIZE);
+  $("groupsMonth").textContent = `${keyToUs(state.from)} \u2013 ${keyToUs(state.to)}`;
+  $("groupsHint").textContent = "Storage used per group for the selected filters.";
+  const emptyText = state.group
+    ? `No usage for ${GROUPS.get(state.group) || "the selected group"} with the selected filters.`
+    : "No group usage for the selected filters.";
+  $("groupTable").tBodies[0].replaceChildren(...(slice.length ? slice.map(g => el("tr", {},
+      el("td", {}, el("span", { class: "s1", text: g.name })),
+      el("td", { class: "r num" + (g.limit == null ? " limit-none" : ""),
+        text: g.limit === undefined ? "\u2014" : g.limit === null ? "No limit" : fmtGB(g.limit) }),
+      el("td", { class: "r num", text: gbNumber(g.used) }),
+      el("td", { class: "r num", text: gbNumber(g.filestream) }),
+      el("td", { class: "r num", text: gbNumber(g.projects) })))
+    : [el("tr", {}, el("td", { colspan: 5, class: "empty", text: emptyText }))]));
+
+  const to = Math.min(start + GROUP_PAGE_SIZE, list.length);
+  renderPager($("groupPager"), `Groups ${fmtNum(list.length ? start + 1 : 0)}–${fmtNum(to)} of ${fmtNum(list.length)}`,
+    state.groupPage, pages, "Group pages", p => { state.groupPage = p; renderGroups(); });
+}
+
+// ---------- pager: ‹ Previous  1 2 3 … N  Next › ----------
+/* Which page numbers to show: always the first and last page, plus the pages around the
+   current one; "…" fills the gaps. Example on page 6 of 465: 1 … 5 6 7 … 465 */
+function pageList(current, total) {
+  const keep = new Set([0, total - 1, current - 1, current, current + 1]);
+  if (current <= 3) [1, 2, 3, 4].forEach(i => keep.add(i));                  // near the start: 1 2 3 4 5 … N
+  if (current >= total - 4) [total - 5, total - 4, total - 3, total - 2].forEach(i => keep.add(i));  // near the end
+  const pages = [...keep].filter(i => i >= 0 && i < total).sort((a, b) => a - b);
+  const out = [];
+  pages.forEach((p, i) => { if (i && p - pages[i - 1] > 1) out.push(null); out.push(p); });
+  return out;
+}
+function renderPager(host, summary, current, total, label, go) {
+  const goAndFocus = p => {
+    go(p);
+    host.querySelector('button[aria-current="page"]')?.focus();   // keep keyboard users on the pager
+  };
+  const nav = el("nav", { "aria-label": label },
+    el("button", { type: "button", disabled: current === 0 ? "" : null, "aria-label": "Previous page",
+      onclick: () => goAndFocus(current - 1), text: "‹ Previous" }),
+    ...pageList(current, total).map(p => p === null
+      ? el("span", { class: "gap", "aria-hidden": "true", text: "…" })
+      : el("button", { type: "button", "aria-label": `Page ${p + 1}`, "aria-current": p === current ? "page" : null,
+          onclick: () => { if (p !== current) goAndFocus(p); }, text: fmtNum(p + 1) })),
+    el("button", { type: "button", disabled: current >= total - 1 ? "" : null, "aria-label": "Next page",
+      onclick: () => goAndFocus(current + 1), text: "Next ›" }));
+  host.replaceChildren(el("span", { class: "num", text: summary }), nav);
+}
+
+// ---------- uploads table ----------
+const COLS = { ts: "Timestamp", group: "Group", email: "User", file: "File name", type: "Upload type", size: "File size" };
+const TYPE_LABELS = { version: "Projects", filestream_file: "Filestream" };
+const typeLabel = r => TYPE_LABELS[r.type] || r.type || "—";
+function renderHeaders() {
+  for (const th of document.querySelectorAll("#uploads th[data-sort]")) {
+    const key = th.dataset.sort, active = state.sort === key;
+    th.setAttribute("aria-sort", active ? (state.dir > 0 ? "ascending" : "descending") : "none");
+    th.replaceChildren(el("button", { class: "sort-btn", type: "button",
+      onclick: () => { if (state.sort === key) state.dir *= -1; else { state.sort = key; state.dir = key === "ts" || key === "size" ? -1 : 1; } state.page = 0; renderTable(); } },
+      COLS[key], el("span", { class: "arrow", "aria-hidden": "true", text: active ? (state.dir > 0 ? "▲" : "▼") : "" })));
+  }
+}
+function sortRows(rows) {
+  const k = state.sort, dir = state.dir;
+  return rows.sort((a, b) => {
+    const va = k === "type" ? typeLabel(a) : a[k], vb = k === "type" ? typeLabel(b) : b[k];
+    const c = typeof va === "number" ? va - vb : String(va).localeCompare(String(vb));
+    return c * dir || (b.ts - a.ts);
+  });
+}
+function detailsRow(r) {
+  const dl = el("dl");
+  const add = (k, v) => dl.append(el("dt", { text: k }), el("dd", { text: v == null ? "" : String(v) }));
+  const walk = (obj, prefix) => {
+    for (const [k, v] of Object.entries(obj)) {
+      if (v && typeof v === "object" && !Array.isArray(v)) walk(v, prefix + k + ".");
+      else add(prefix + k, Array.isArray(v) ? JSON.stringify(v) : v);
+    }
+  };
+  add("local time", `${usDate(r.d)} ${timeStr(r.d)} (${Intl.DateTimeFormat().resolvedOptions().timeZone || "local"})`);
+  walk(r.raw || {}, "");
+  return el("tr", { class: "details" }, el("td", { colspan: 7 }, dl));
+}
+function renderTable() {
+  renderHeaders();
+  const rows = sortRows(filtered());
+  const pages = Math.max(Math.ceil(rows.length / PAGE_SIZE), 1);
+  state.page = Math.min(state.page, pages - 1);
+  const slice = rows.slice(state.page * PAGE_SIZE, (state.page + 1) * PAGE_SIZE);
+  const out = [];
+  for (const r of slice) {
+    const open = state.open.has(r.i), failed = r.outcome && r.outcome !== "SUCCESS";
+    const tr = el("tr", { class: `row${open ? " open" : ""}${failed ? " failed" : ""}`, tabindex: 0, "aria-expanded": String(open) },
+      el("td", { class: "chev" }, el("span", { "aria-hidden": "true", text: "›" })),
+      el("td", {}, el("div", { class: "stack" }, el("span", { class: "s1 num", text: timeStr(r.d) }), el("span", { class: "s2 num", text: usDate(r.d) }))),
+      el("td", { class: "col-group" }, el("span", { class: "s1", text: r.group })),
+      el("td", { class: "email" }, el("span", { text: r.email || r.user })),
+      el("td", { class: "file" }, el("div", { class: "stack" }, el("span", { class: "s1", text: r.file }),
+        r.project ? el("span", { class: "s2", text: `${r.project} / ${r.package}` }) : null,
+        failed ? el("span", {}, el("span", { class: "badge fail", text: `Failed (${r.outcome})` })) : null)),
+      el("td", { class: "col-type" }, el("span", { class: "badge", text: typeLabel(r) })),
+      el("td", { class: "r num", text: fmtGB(r.size) }));
+    const toggle = () => { open ? state.open.delete(r.i) : state.open.add(r.i); renderTable(); };
+    tr.addEventListener("click", toggle);
+    tr.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } });
+    out.push(tr);
+    if (open) out.push(detailsRow(r));
+  }
+  if (!out.length) out.push(el("tr", {}, el("td", { colspan: 7, class: "empty", text: "No uploads match the current filters." })));
+  $("uploads").tBodies[0].replaceChildren(...out);
+
+  const from = rows.length ? state.page * PAGE_SIZE + 1 : 0, to = Math.min((state.page + 1) * PAGE_SIZE, rows.length);
+  renderPager($("pager"), `Uploads ${fmtNum(from)}–${fmtNum(to)} of ${fmtNum(rows.length)}`, state.page, pages, "Uploads pages",
+    p => { state.page = p; renderTable(); });
+}
+
+// ---------- caption ----------
+function renderCaption() {
+  const n = filtered().length;
+  $("caption").textContent = `Showing ${fmtNum(n)} result${n === 1 ? "" : "s"} in the selected range.`;
+}
+
+// ---------- go ----------
+function renderAll() {
+  refreshFilters(); renderCaption(); renderChart(); renderGroups(); renderTable();
+}
+renderHeader(); renderCapacity(); renderMeters(); renderAll();
+let resizeTimer;
+window.addEventListener("resize", () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderChart, 120); });
+</script>
+{% endraw %}
+</body>
+</html>
