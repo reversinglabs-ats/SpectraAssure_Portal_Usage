@@ -1,0 +1,28 @@
+# config.example.toml
+# -----------------------------------------------------------------------------
+# HOW TO USE
+#   1. Copy this file and name the copy  config.toml
+#   2. Replace the three placeholder values below with your own.
+#   3. Never share or commit config.toml — it contains your secret token.
+# -----------------------------------------------------------------------------
+
+# Base URL of your Portal's public API.
+# Format: https://<portal-host>/<your-instance>/api/public/v1
+# Tip: no slash at the end (the script removes one if you add it).
+# Example base URL = "https://my.secure.software/your-instance/api/public/v1"
+
+# Organization name exactly as it appears in the Portal (case-sensitive).
+# Example organization = "ReversingLabs"
+
+# Personal Access Token (PAT).
+# Create one in the Portal: User Settings -> Personal Access Tokens.
+# Tokens expire (default 90 days) — if the script says "token invalid or
+# expired", generate a new one and paste it here.
+# Audit logs require the Organization administrator role.
+# Example token = "rls3-...4c8"
+
+# Enter your data here (replace placeholders)
+
+base_url     = "<your base URL>"
+organization = "<your organization>"
+token        = "<your token>"
