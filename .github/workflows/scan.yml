@@ -1,0 +1,106 @@
+name: RL Security Scan
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  scan-and-report:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      # ----------------------------------------------------------------
+      # BUILD YOUR ARTIFACT
+      # Replace this step with your project's build process.
+      # The scan needs a single file (tar, zip, wheel, etc.)
+      #
+      # Examples:
+      #   tar -cvf ./packages/artifact.tar --exclude='.git' .
+      #   python -m build && cp dist/*.whl ./packages/
+      #   docker save myimage:latest -o ./packages/image.tar
+      # ----------------------------------------------------------------
+      - name: Create artifact
+        run: |
+          mkdir -p ./packages ./rl-reports
+          tar -cvf ./packages/artifact.tar \
+            --exclude='.git' \
+            --exclude='./packages' \
+            --exclude='__pycache__' \
+            --exclude='*.pyc' \
+            .
+
+      - name: Scan with rl-scanner
+        run: |
+          docker run --rm \
+            -e RLSECURE_ENCODED_LICENSE=${{ secrets.RLSECURE_ENCODED_LICENSE }} \
+            -e RLSECURE_SITE_KEY=${{ secrets.RLSECURE_SITE_KEY }} \
+            -v "${{ github.workspace }}/packages:/packages:ro" \
+            -v "${{ github.workspace }}/rl-reports:/report" \
+            --entrypoint /bin/bash \
+            reversinglabs/rl-scanner \
+            -c '
+              set -e
+              rl-deploy install /tmp/__rlsecure --no-tracking \
+                --from-cache=/tmp/rl-secure.cache \
+                --encoded-key="$RLSECURE_ENCODED_LICENSE" \
+                --site-key="$RLSECURE_SITE_KEY"
+
+              cp /packages/artifact.tar /tmp/__rlsecure/
+
+              /tmp/__rlsecure/rl-secure init --rl-store=/tmp/__rlsecure/rlstore
+
+              /tmp/__rlsecure/rl-secure scan --no-tracking \
+                --rl-store=/tmp/__rlsecure/rlstore \
+                --purl=pkg:rl/${{ github.repository }}@${{ github.sha }} \
+                --file-path=/tmp/__rlsecure/artifact.tar
+
+              /tmp/__rlsecure/rl-secure report \
+                --rl-store=/tmp/__rlsecure/rlstore \
+                --purl=pkg:rl/${{ github.repository }}@${{ github.sha }} \
+                --output-path=/report \
+                --format=rl-json
+
+              chmod -R a+rX /report
+            '
+
+      - name: Upload scan report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: rl-scan-report
+          path: ./rl-reports/
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        if: always()
+        with:
+          repository: reversinglabs-ats/rl-scanner-to-github
+          path: _tool
+          submodules: true
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        if: always()
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        if: always()
+        run: pip install requests
+
+      - name: Create GitHub issues
+        if: always()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python _tool/src/main.py \
+            --report ./rl-reports/report.rl.json \
+            --metadata-dir _tool/data/rl-scanner-metadata/data \
+            --max-issues 10
