@@ -1,2 +1,2 @@
-spectra-assure-sdk>=1.1.0
+spectra-assure-sdk>=1.2.0
 jinja2>=3.1
