@@ -53,7 +53,7 @@ In no event shall the developer be liable for any direct, indirect, incidental, 
 python run_report.py [options]
 ```
 
-Total run time is normally 1-2 minutes, most of which is waiting for the Portal to prepare the audit log export file. When it's done, the report opens in your web browser automatically. By default, the report includes activity from the last 90 days.
+Run time is normally less than 1 minute, most of which is waiting for the Portal to prepare the audit log export file. When it's done, the report opens in your web browser automatically. By default, the report includes activity from the last 90 days.
 
 ### Options
 
