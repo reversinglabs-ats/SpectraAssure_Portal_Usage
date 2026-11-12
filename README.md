@@ -24,7 +24,7 @@ In no event shall the developer be liable for any direct, indirect, incidental, 
 | What | Details |
 |---|---|
 | Python | 3.11 or newer |
-| Python libraries | `spectra-assure-sdk` 1.1.0 or newer (ReversingLabs' official Python SDK for the Portal API) and `jinja2` (builds the HTML report). Both are installed in Setup step 2 |
+| Python libraries | `spectra-assure-sdk` 1.2.0 or newer (ReversingLabs' official Python SDK for the Portal API) and `jinja2` (builds the HTML report). Both are installed in Setup step 2 |
 | Portal role | **Organization administrator**, required to export audit logs |
 | Personal Access Token (PAT) | Portal → *User Settings* → *Personal Access Tokens*. Revoke and generate new token when existing expires. More info how to generate token can be found here: https://docs.secure.software/api/generate-api-token  |
 
